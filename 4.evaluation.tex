@@ -1,5 +1,6 @@
 \section{Preliminary Results and Limitations}
-The available evidence consists of setup notes and two output files, \texttt{baseline.out} and \texttt{aop.out}. Each file begins with the same pair of hexadecimal addresses, followed by columns labeled \texttt{test} and \texttt{train}, and contains 32 measurement rows. Table~\ref{tab:logs} summarizes these rows without assigning unverified units or meanings to the columns.
+\subsection{Earlier Timing Logs}
+The earlier measurement record consists of setup notes and two output files, \texttt{baseline.out} and \texttt{aop.out}. Each file begins with the same pair of hexadecimal addresses, followed by columns labeled \texttt{test} and \texttt{train}, and contains 32 measurement rows. Table~\ref{tab:logs} summarizes these rows without assigning unverified units or meanings to the columns.
 
 \begin{table}[t]
 \caption{Descriptive summary of the supplied logs. Values use the logs' raw units. These are not attack-success measurements.}
@@ -20,4 +21,46 @@ Measurement rows & 32 & 32 \\
 
 The AoP run has a lower median \texttt{train} value, but the ranges overlap substantially. All \texttt{test} values in both files are below the notes' provisional threshold of 82. If these values are in calibrated nanoseconds, that threshold would classify every \texttt{test} observation as a hit in both conditions. Consequently, these logs alone do not demonstrate an AoP-specific hit/miss separation or establish a causal DMP effect. They also do not establish a full speedup curve, prefetch distance, confidence threshold, boundary behavior, or exploit accuracy.
 
-Interpreting these logs causally requires the generating code and configuration, the meaning and units of each column, whether the target was architecturally accessed, and the eviction procedure. We therefore limit our quantitative observations to the descriptive summary above and do not infer activation thresholds, reverse-engineered parameters, or attack success rates from these files.
+Interpreting these logs causally requires the generating code and configuration, the meaning and units of each column, whether the target was architecturally accessed, and the eviction procedure. These files alone support only the descriptive observations above; the existence sweep summarized next supplies additional evidence, but does not establish exploit success rates.
+
+
+\subsection{Augury Existence Sweep on M1}
+The supplied \emph{Reproducing the Augury DMP Existence Experiment on Apple M1} phase-one summary reports a completed sweep of 14 training sizes, each tested at 81 offsets. Table~\ref{tab:existence} transcribes its aggregate results. Speedup is baseline target-access time divided by AoP target-access time after the summary's outlier removal. An activating offset must have speedup greater than 2$\times$ and AoP access time below 150\,ns. Median speedups and median access times are computed only over activating offsets, excluding offset zero; they are not medians across all 81 offsets.
+
+\begin{table*}[t]
+\caption{Reported Augury existence sweep on Apple M1/macOS. Dashes indicate no activating offsets. Best-run times are baseline/AoP in nanoseconds. All values are transcribed from the supplied phase-one summary; raw sweep files were not supplied with it.}
+\label{tab:existence}
+\centering
+\small
+\begin{tabular}{rrrrrr}
+\toprule
+Training pointers & Activating offsets & Median speedup & Median AoP (ns) & Max speedup & Best run (ns) \\
+\midrule
+1    & 0  & --- & --- & 1.4$\times$ & 425/302 \\
+2    & 1  & 4.0$\times$ & 87  & 4.0$\times$ & 350/87 \\
+4    & 2  & 4.0$\times$ & 102 & 4.5$\times$ & 533/117 \\
+8    & 0  & --- & --- & 1.5$\times$ & 794/535 \\
+16   & 1  & 5.4$\times$ & 127 & 5.4$\times$ & 689/127 \\
+32   & 9  & 8.4$\times$ & 74  & 17.9$\times$ & 818/46 \\
+64   & 7  & 6.6$\times$ & 90  & 16.5$\times$ & 796/48 \\
+128  & 8  & 7.2$\times$ & 103 & 11.1$\times$ & 645/58 \\
+256  & 9  & 16.3$\times$ & 42 & 25.4$\times$ & 1061/42 \\
+512  & 8  & 6.2$\times$ & 98  & 11.9$\times$ & 658/55 \\
+1024 & 14 & 5.7$\times$ & 92  & 14.8$\times$ & 618/42 \\
+2048 & 10 & 4.8$\times$ & 87  & 7.0$\times$ & 396/57 \\
+4096 & 18 & 4.8$\times$ & 46  & 10.0$\times$ & 415/42 \\
+8192 & 19 & 3.8$\times$ & 46  & 7.1$\times$ & 296/42 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Activation is reported at 12 of the 14 training sizes, including every sampled size from 32 through 8192. The strongest median speedup among activating offsets is 16.3$\times$ at 256 training pointers, with a maximum of 25.4$\times$. Fast accesses to targets not architecturally dereferenced during training are consistent with Augury's pointer-dependent prefetching mechanism~\cite{augury}. These results provide stronger existence evidence than the earlier logs, whose baseline and AoP test values were both below the provisional hit threshold.
+
+Activation first appears at the sampled size of two training pointers and also occurs at four, but no activation is reported at one or eight. Since three pointers were not tested and activation is not monotonic, this sweep does not establish an exact three-access confidence threshold. The activating-offset count increases overall from one at size two to 19 at size 8192, but falls at several intermediate sizes. Counts alone do not establish a monotonic increase in maximum prefetch distance; that requires the actual offset positions and repeated trials.
+
+\subsection{Limitations and Follow-up Controls}
+The absence of activation at eight training pointers remains unresolved. System contention is a possible explanation, not an established cause. We will repeat that size in isolation and in randomized sweeps, retain the original result, and report whether the anomaly reproduces. A background-QoS run intended to favor the Icestorm efficiency cluster remains a planned negative control; neither QoS hints nor observed activation independently prove core residency.
+
+The approximately 42\,ns timer tick supports coarse timing separation but cannot establish that a target was specifically an L1 rather than L2 hit. Medians restricted to activating offsets describe the observed signal conditional on the activation criterion; they are not whole-sweep performance gains or exploit success rates. The supplied summary references \texttt{sweep\_out/}, but the underlying measurements, outlier-removal details, uncertainty estimates, and full run configuration were not supplied with it. Consequently, these are reported aggregate results rather than an independently reanalyzed dataset.
+
+Remaining phase-one tests cover stride and prefetch distance, the reported 16\,KiB and 2\,MiB boundary effects, virtual-address regions that resist prefetching, and eight-byte alignment. GoFetch activation experiments and the out-of-bounds, ASLR, and cross-process exploitation demonstrations remain future work.

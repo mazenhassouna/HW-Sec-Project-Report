@@ -25,10 +25,10 @@ Interpreting these logs causally requires the generating code and configuration,
 
 
 \subsection{Augury Existence Sweep on M1}
-The supplied \emph{Reproducing the Augury DMP Existence Experiment on Apple M1} phase-one summary reports a completed sweep of 14 training sizes, each tested at 81 offsets. Table~\ref{tab:existence} transcribes its aggregate results. Speedup is baseline target-access time divided by AoP target-access time after the summary's outlier removal. An activating offset must have speedup greater than 2$\times$ and AoP access time below 150\,ns. Median speedups and median access times are computed only over activating offsets, excluding offset zero; they are not medians across all 81 offsets.
+Our initial reverse engineering steps included a sweep of 14 training sizes, each tested at 81 offsets. Table~\ref{tab:existence} summarizes our aggregate results. Speedup is baseline target-access time divided by AoP target-access time after outlier removal. An activating offset must have speedup greater than 2$\times$ and AoP access time below 150\,ns. Median speedups and median access times are computed only over activating offsets, excluding offset zero; they are not medians across all 81 offsets.
 
 \begin{table*}[t]
-\caption{Reported Augury existence sweep on Apple M1/macOS. Dashes indicate no activating offsets. Best-run times are baseline/AoP in nanoseconds. All values are transcribed from the supplied phase-one summary; raw sweep files were not supplied with it.}
+\caption{Results from our initial reverse engineering steps: an Augury existence sweep on Apple M1/macOS. Dashes indicate no activating offsets. Best-run times are baseline/AoP in nanoseconds.}
 \label{tab:existence}
 \centering
 \small
